@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DataRunner AI - 查询中心 | 可视化拖拽与SQL模式</title>
+    <!-- Google Font & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e9eef3;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* 整体布局 grid */
+        .app-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: #ffffff;
+            border-right: 1px solid #e9edf2;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.02);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding-left: 8px;
+        }
+        .logo-icon {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 20px;
+            background: linear-gradient(135deg, #1e293b, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-item i {
+            width: 22px;
+            font-size: 1.2rem;
+        }
+        .nav-item.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .nav-item:not(.active):hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        .bottom-info {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #edf2f7;
+            padding-left: 12px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            background: white;
+            padding: 12px 28px;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .mode-switch {
+            display: flex;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 40px;
+        }
+        .mode-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 20px;
+            border-radius: 32px;
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #475569;
+        }
+        .mode-btn.active {
+            background: white;
+            color: #2563eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .data-source-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+        .run-btn {
+            background: linear-gradient(95deg, #2563eb, #4f46e5);
+            border: none;
+            padding: 8px 24px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .run-btn:hover {
+            background: linear-gradient(95deg, #1d4ed8, #4338ca);
+            transform: translateY(-1px);
+        }
+        .secondary-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 6px 16px;
+            border-radius: 32px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        /* 查询工作区 */
+        .query-workspace {
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex: 1;
+        }
+        /* 双栏布局 (左侧表树 + 右侧配置) */
+        .dual-panel {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            min-height: 360px;
+        }
+        /* 左侧数据浏览器 */
+        .data-browser {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .browser-header {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-weight: 600;
+        }
+        .table-tree {
+            padding: 8px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .table-item {
+            padding: 8px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .table-item:hover {
+            background: #f8fafc;
+        }
+        .table-item.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .field-list {
+            margin-left: 28px;
+            margin-top: 4px;
+            display: none;
+        }
+        .table-item.active + .field-list, .field-list.show {
+            display: block;
+        }
+        .field-item {
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #475569;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .field-item:hover {
+            background: #f1f5f9;
+        }
+        /* 右侧配置区 */
+        .config-panel {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .selected-fields {
+            background: #f9fafc;
+            border-radius: 16px;
+            padding: 12px;
+            min-height: 100px;
+        }
+        .field-tag {
+            background: #eef2ff;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin: 4px 6px 4px 0;
+            font-size: 12px;
+        }
+        .condition-builder {
+            background: #f9fafc;
+            border-radius: 16px;
+            padding: 12px;
+        }
+        .condition-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .condition-row select, .condition-row input {
+            padding: 6px 10px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+        }
+        .sql-editor {
+            width: 100%;
+            min-height: 280px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 16px;
+            resize: vertical;
+        }
+        .results-area {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+        }
+        .results-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-table {
+            overflow-x: auto;
+            padding: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+        .badge {
+            background: #eef2ff;
+            color: #2563eb;
+            border-radius: 30px;
+            padding: 2px 10px;
+            font-size: 11px;
+        }
+        .ai-btn {
+            background: #f5f3ff;
+            border: 1px solid #c4b5fd;
+            color: #7c3aed;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-brain"></i></div>
+            <div class="logo-text">DataRunner AI</div>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item"><i class="fas fa-microphone-alt"></i> AI工作台</div>
+            <div class="nav-item active"><i class="fas fa-chart-line"></i> 查询中心</div>
+            <div class="nav-item"><i class="fas fa-scroll"></i> Prompt工坊</div>
+            <div class="nav-item"><i class="fas fa-clock"></i> 任务调度</div>
+            <div class="nav-item"><i class="fas fa-database"></i> 模型中心</div>
+        </div>
+        <div class="bottom-info">
+            <i class="fas fa-shield-alt"></i> 数据安全审计中<br>
+            v2.0 · 社媒分析版
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div class="mode-switch" id="modeSwitch">
+                    <button class="mode-btn active" data-mode="visual">📊 可视化模式</button>
+                    <button class="mode-btn" data-mode="sql">💻 SQL 模式</button>
+                </div>
+                <div class="data-source-selector">
+                    <i class="fas fa-database"></i>
+                    <select id="dataSourceSelect">
+                        <option value="douyin">抖音评论库 (社媒)</option>
+                        <option value="xiaohongshu">小红书帖子库</option>
+                        <option value="weibo">微博舆情库</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="secondary-btn" id="saveTaskBtn"><i class="far fa-save"></i> 保存任务</button>
+                <button class="run-btn" id="runQueryBtn"><i class="fas fa-play"></i> 运行查询</button>
+            </div>
+        </div>
+
+        <div class="query-workspace">
+            <!-- 可视化模式面板 -->
+            <div id="visualPanel" class="dual-panel">
+                <!-- 左侧数据浏览器 -->
+                <div class="data-browser">
+                    <div class="browser-header"><i class="fas fa-table"></i> 数据源表</div>
+                    <div class="table-tree" id="tableTree">
+                        <!-- 动态填充表结构 -->
+                    </div>
+                </div>
+                <!-- 右侧配置区 -->
+                <div class="config-panel">
+                    <div>
+                        <div class="section-title"><span>📌 选取字段 (双击字段添加)</span> <button class="secondary-btn" style="padding:2px 12px;" id="clearFieldsBtn">清空</button></div>
+                        <div id="selectedFieldsArea" class="selected-fields">暂无选中字段，双击左侧字段添加</div>
+                    </div>
+                    <div>
+                        <div class="section-title">🔍 筛选条件</div>
+                        <div id="conditionContainer" class="condition-builder">
+                            <div class="condition-row" data-idx="0">
+                                <select class="condition-field">
+                                    <option value="comment_text">评论内容</option>
+                                    <option value="sentiment">情感</option>
+                                    <option value="likes">点赞数</option>
+                                    <option value="create_time">发布时间</option>
+                                </select>
+                                <select class="condition-op">
+                                    <option value="contains">包含</option>
+                                    <option value="=">等于</option>
+                                    <option value=">">大于</option>
+                                    <option value="<">小于</option>
+                                </select>
+                                <input type="text" class="condition-value" placeholder="值" value="">
+                                <button class="icon-btn add-condition"><i class="fas fa-plus-circle"></i></button>
+                                <button class="icon-btn remove-condition"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="section-title">📈 聚合与排序</div>
+                        <div style="display: flex; gap: 20px;">
+                            <label>分组字段: <select id="groupBySelect"><option value="">无</option><option value="sentiment">情感</option><option value="create_date">日期</option></select></label>
+                            <label>排序: <select id="orderSelect"><option value="">默认</option><option value="likes desc">点赞数降序</option><option value="create_time desc">时间降序</option></select></label>
+                            <label>行数限制: <input type="number" id="limitInput" value="100" style="width:80px;"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SQL模式面板 (初始隐藏) -->
+            <div id="sqlPanel" style="display: none;">
+                <div style="background: white; border-radius: 24px; border: 1px solid #eef2f8; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                        <div class="section-title"><i class="fas fa-code"></i> SQL 编辑器</div>
+                        <div>
+                            <button class="secondary-btn ai-btn" id="aiGenerateSqlBtn"><i class="fas fa-magic"></i> AI 生成 SQL</button>
+                            <button class="secondary-btn" id="formatSqlBtn" style="margin-left: 8px;"><i class="fas fa-align-left"></i> 格式化</button>
+                        </div>
+                    </div>
+                    <textarea id="sqlEditor" class="sql-editor" placeholder="-- 在此编写SQL，支持变量如 ${start_date}  --&#10;SELECT comment_text, sentiment, likes FROM douyin_comments WHERE create_time >= '2025-01-01' LIMIT 100"></textarea>
+                    <div class="section-title" style="margin-top: 20px;">🔧 参数占位符 (可选)</div>
+                    <div id="sqlParamsArea" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <div><label>开始日期: <input type="date" id="startDateParam" value="2025-01-01"></label></div>
+                        <div><label>结束日期: <input type="date" id="endDateParam" value="2025-01-31"></label></div>
+                        <div><label>品牌词: <input type="text" id="brandParam" placeholder="品牌名" value="XX品牌"></label></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结果展示区 (共用) -->
+            <div class="results-area">
+                <div class="results-header">
+                    <span><i class="fas fa-table-list"></i> 查询结果</span>
+                    <div>
+                        <button class="secondary-btn" id="exportCsvBtn" style="margin-right: 8px;"><i class="fas fa-download"></i> 导出CSV</button>
+                        <button class="secondary-btn" id="viewLogBtn"><i class="fas fa-history"></i> 执行日志</button>
+                    </div>
+                </div>
+                <div id="resultContainer" class="result-table">
+                    <!-- 动态表格 -->
+                    <div style="text-align: center; padding: 40px; color: #94a3b8;">点击「运行查询」查看数据结果</div>
+                </div>
+                <div id="logPanel" style="display: none; padding: 16px; background: #fef9e3; border-top: 1px solid #fde047; font-family: monospace; font-size: 12px;">
+                    <!-- 日志显示 -->
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // ---------- MOCK 数据及表结构 ----------
+    const tables = {
+        douyin: {
+            name: "抖音评论库",
+            fields: [
+                { name: "comment_id", type: "int", label: "评论ID" },
+                { name: "comment_text", type: "text", label: "评论内容" },
+                { name: "sentiment", type: "string", label: "情感(正面/中性/负面)" },
+                { name: "likes", type: "int", label: "点赞数" },
+                { name: "create_time", type: "datetime", label: "发布时间" },
+                { name: "brand_tag", type: "string", label: "品牌提及" }
+            ],
+            mockData: [
+                { comment_id: 1001, comment_text: "产品质量很好，物流有点慢", sentiment: "正面", likes: 234, create_time: "2025-01-15", brand_tag: "XX品牌" },
+                { comment_id: 1002, comment_text: "客服态度差，再也不买了", sentiment: "负面", likes: 56, create_time: "2025-01-16", brand_tag: "XX品牌" },
+                { comment_id: 1003, comment_text: "价格实惠，会回购", sentiment: "正面", likes: 178, create_time: "2025-01-17", brand_tag: "XX品牌" },
+                { comment_id: 1004, comment_text: "物流太慢，影响体验", sentiment: "负面", likes: 92, create_time: "2025-01-18", brand_tag: "竞品A" },
+                { comment_id: 1005, comment_text: "不错，性价比高", sentiment: "正面", likes: 310, create_time: "2025-01-19", brand_tag: "XX品牌" },
+                { comment_id: 1006, comment_text: "一般般，没什么特别", sentiment: "中性", likes: 23, create_time: "2025-01-20", brand_tag: "XX品牌" }
+            ]
+        },
+        xiaohongshu: {
+            name: "小红书帖子库",
+            fields: [
+                { name: "post_id", type: "int", label: "帖子ID" },
+                { name: "content", type: "text", label: "正文" },
+                { name: "sentiment", type: "string", label: "情感倾向" },
+                { name: "likes", type: "int", label: "点赞" }
+            ],
+            mockData: [
+                { post_id: 201, content: "超爱这款新品，推荐", sentiment: "正面", likes: 450 },
+                { post_id: 202, content: "踩雷了，质量不行", sentiment: "负面", likes: 89 }
+            ]
+        },
+        weibo: {
+            name: "微博舆情库",
+            fields: [
+                { name: "tweet_id", type: "int", label: "微博ID" },
+                { name: "text", type: "text", label: "博文内容" },
+                { name: "sentiment", type: "string", label: "情绪" }
+            ],
+            mockData: [
+                { tweet_id: 301, text: "支持国货，越来越好", sentiment: "正面" },
+                { tweet_id: 302, text: "售后体验差，失望", sentiment: "负面" }
+            ]
+        }
+    };
+
+    let currentMode = "visual"; // visual or sql
+    let selectedTable = "douyin";
+    let selectedFields = []; // 存储字段名
+    let conditions = []; // 存储筛选条件 {field, op, value}
+    let mockResultData = [];
+
+    // 初始化表树
+    function renderTableTree() {
+        const container = document.getElementById("tableTree");
+        const currentTableKey = selectedTable;
+        let html = '';
+        for (let [key, table] of Object.entries(tables)) {
+            const activeClass = (key === currentTableKey) ? 'active' : '';
+            html += `<div class="table-item ${activeClass}" data-table="${key}"><i class="fas fa-database"></i> ${table.name}</div>`;
+            // 字段列表
+            html += `<div class="field-list" data-table-fields="${key}" style="${key === currentTableKey ? 'display:block;' : 'display:none;'}">`;
+            table.fields.forEach(field => {
+                html += `<div class="field-item" data-field="${field.name}" data-field-type="${field.type}"><i class="fas fa-columns"></i> ${field.label} (${field.name})</div>`;
+            });
+            html += `</div>`;
+        }
+        container.innerHTML = html;
+
+        // 绑定表点击事件
+        document.querySelectorAll('.table-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const tableKey = el.getAttribute('data-table');
+                if (tableKey) {
+                    selectedTable = tableKey;
+                    renderTableTree(); // 重新渲染高亮
+                    // 清空当前选中字段与条件（可选）
+                    selectedFields = [];
+                    renderSelectedFields();
+                    updateConditionFieldsOptions();
+                }
+            });
+        });
+
+        // 绑定字段双击事件 (添加到选中字段)
+        document.querySelectorAll('.field-item').forEach(fieldEl => {
+            fieldEl.addEventListener('dblclick', (e) => {
+                const fieldName = fieldEl.getAttribute('data-field');
+                if (fieldName && !selectedFields.includes(fieldName)) {
+                    selectedFields.push(fieldName);
+                    renderSelectedFields();
+                }
+                e.stopPropagation();
+            });
+        });
+    }
+
+    function renderSelectedFields() {
+        const container = document.getElementById("selectedFieldsArea");
+        if (!selectedFields.length) {
+            container.innerHTML = '暂无选中字段，双击左侧字段添加';
+            return;
+        }
+        let html = '';
+        selectedFields.forEach(f => {
+            const fieldLabel = getFieldLabel(f);
+            html += `<span class="field-tag">${fieldLabel || f} <i class="fas fa-times" style="cursor:pointer; margin-left:6px;" data-field="${f}"></i></span>`;
+        });
+        container.innerHTML = html;
+        // 绑定删除图标
+        document.querySelectorAll('#selectedFieldsArea .fa-times').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                const field = icon.getAttribute('data-field');
+                selectedFields = selectedFields.filter(f => f !== field);
+                renderSelectedFields();
+            });
+        });
+    }
+
+    function getFieldLabel(fieldName) {
+        const table = tables[selectedTable];
+        if (!table) return fieldName;
+        const f = table.fields.find(fld => fld.name === fieldName);
+        return f ? f.label : fieldName;
+    }
+
+    // 更新条件选择器的字段下拉框
+    function updateConditionFieldsOptions() {
+        const selects = document.querySelectorAll('#conditionContainer .condition-field');
+        const table = tables[selectedTable];
+        if (!table) return;
+        selects.forEach(select => {
+            const currentVal = select.value;
+            select.innerHTML = table.fields.map(f => `<option value="${f.name}" ${f.name === currentVal ? 'selected' : ''}>${f.label}</option>`).join('');
+        });
+    }
+
+    // 动态添加条件行
+    function addConditionRow(fieldVal = 'comment_text', opVal = 'contains', valueVal = '') {
+        const container = document.getElementById('conditionContainer');
+        const idx = Date.now();
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'condition-row';
+        rowDiv.setAttribute('data-idx', idx);
+        const fieldsOpts = tables[selectedTable].fields.map(f => `<option value="${f.name}">${f.label}</option>`).join('');
+        rowDiv.innerHTML = `
+            <select class="condition-field">${fieldsOpts}</select>
+            <select class="condition-op">
+                <option value="contains" ${opVal === 'contains' ? 'selected' : ''}>包含</option>
+                <option value="=" ${opVal === '=' ? 'selected' : ''}>等于</option>
+                <option value=">" ${opVal === '>' ? 'selected' : ''}>大于</option>
+                <option value="<" ${opVal === '<' ? 'selected' : ''}>小于</option>
+            </select>
+            <input type="text" class="condition-value" placeholder="值" value="${valueVal}">
+            <button class="icon-btn add-condition"><i class="fas fa-plus-circle"></i></button>
+            <button class="icon-btn remove-condition"><i class="fas fa-trash-alt"></i></button>
+        `;
+        container.appendChild(rowDiv);
+        attachConditionEvents(rowDiv);
+    }
+
+    function attachConditionEvents(row) {
+        row.querySelector('.add-condition')?.addEventListener('click', () => addConditionRow());
+        row.querySelector('.remove-condition')?.addEventListener('click', () => row.remove());
+    }
+
+    // 收集条件
+    function collectConditions() {
+        const rows = document.querySelectorAll('#conditionContainer .condition-row');
+        const conds = [];
+        rows.forEach(row => {
+            const field = row.querySelector('.condition-field')?.value;
+            const op = row.querySelector('.condition-op')?.value;
+            const value = row.querySelector('.condition-value')?.value;
+            if (field && value) conds.push({ field, op, value });
+        });
+        return conds;
+    }
+
+    // 可视化模式模拟查询
+    function runVisualQuery() {
+        const tableData = tables[selectedTable]?.mockData || [];
+        let result = [...tableData];
+        // 筛选条件
+        const conds = collectConditions();
+        conds.forEach(cond => {
+            result = result.filter(row => {
+                let cell = row[cond.field];
+                if (cell === undefined) return false;
+                if (cond.op === 'contains') return String(cell).includes(cond.value);
+                if (cond.op === '=') return String(cell) === cond.value;
+                if (cond.op === '>') return Number(cell) > Number(cond.value);
+                if (cond.op === '<') return Number(cell) < Number(cond.value);
+                return true;
+            });
+        });
+        // 分组聚合模拟简化（只演示效果，展示分组计数）
+        const groupBy = document.getElementById('groupBySelect').value;
+        if (groupBy && groupBy !== '') {
+            const grouped = {};
+            result.forEach(r => {
+                const key = r[groupBy];
+                grouped[key] = (grouped[key] || 0) + 1;
+            });
+            result = Object.entries(grouped).map(([k, cnt]) => ({ [groupBy]: k, count: cnt }));
+        }
+        // 排序
+        const order = document.getElementById('orderSelect').value;
+        if (order) {
+            const [field, dir] = order.split(' ');
+            result.sort((a,b) => {
+                let av = a[field], bv = b[field];
+                if (dir === 'desc') return av > bv ? -1 : 1;
+                return av > bv ? 1 : -1;
+            });
+        }
+        const limit = parseInt(document.getElementById('limitInput').value) || 100;
+        result = result.slice(0, limit);
+        mockResultData = result;
+        renderResultTable(result);
+        return result;
+    }
+
+    // SQL模式模拟查询
+    function runSqlQuery() {
+        let sql = document.getElementById('sqlEditor').value;
+        // 简单参数替换
+        const startDate = document.getElementById('startDateParam').value;
+        const endDate = document.getElementById('endDateParam').value;
+        const brand = document.getElementById('brandParam').value;
+        sql = sql.replace(/\${start_date}/g, startDate).replace(/\${end_date}/g, endDate).replace(/\${brand}/g, brand);
+        // 模拟返回固定数据（根据SQL简单模拟）
+        let result = [];
+        if (sql.toLowerCase().includes('douyin')) result = tables.douyin.mockData.slice();
+        else if (sql.toLowerCase().includes('xiaohongshu')) result = tables.xiaohongshu.mockData.slice();
+        else if (sql.toLowerCase().includes('weibo')) result = tables.weibo.mockData.slice();
+        else result = tables.douyin.mockData.slice();
+        // 限制10条演示
+        result = result.slice(0, 10);
+        mockResultData = result;
+        renderResultTable(result);
+        return result;
+    }
+
+    function renderResultTable(data) {
+        const container = document.getElementById('resultContainer');
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px;">无数据，请调整查询条件</div>';
+            return;
+        }
+        const columns = Object.keys(data[0]);
+        let html = '<table><thead><tr>';
+        columns.forEach(col => html += `<th>${col}</th>`);
+        html += '</tr></thead><tbody>';
+        data.forEach(row => {
+            html += '<tr>';
+            columns.forEach(col => {
+                let val = row[col];
+                if (val === undefined) val = '';
+                html += `<td>${String(val).substring(0, 50)}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        // 隐藏日志面板
+        document.getElementById('logPanel').style.display = 'none';
+    }
+
+    // 切换模式
+    function setMode(mode) {
+        currentMode = mode;
+        const visualPanel = document.getElementById('visualPanel');
+        const sqlPanel = document.getElementById('sqlPanel');
+        if (mode === 'visual') {
+            visualPanel.style.display = 'grid';
+            sqlPanel.style.display = 'none';
+        } else {
+            visualPanel.style.display = 'none';
+            sqlPanel.style.display = 'block';
+        }
+        // 更新按钮样式
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            const btnMode = btn.getAttribute('data-mode');
+            if (btnMode === mode) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    // 导出CSV
+    function exportCsv() {
+        if (!mockResultData.length) { alert("无数据可导出"); return; }
+        const headers = Object.keys(mockResultData[0]);
+        const csvRows = [];
+        csvRows.push(headers.join(','));
+        for (const row of mockResultData) {
+            const values = headers.map(header => {
+                let val = row[header] || '';
+                return `"${String(val).replace(/"/g, '""')}"`;
+            });
+            csvRows.push(values.join(','));
+        }
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'query_result.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // 日志展示
+    function showLog() {
+        const logDiv = document.getElementById('logPanel');
+        if (logDiv.style.display === 'none') {
+            logDiv.style.display = 'block';
+            logDiv.innerHTML = `<i class="fas fa-terminal"></i> 执行日志: ${new Date().toLocaleString()}<br>数据源: ${selectedTable} | 模式: ${currentMode}<br>返回行数: ${mockResultData.length} 条<br>耗时: ${(Math.random()*0.5+0.2).toFixed(2)}秒`;
+        } else {
+            logDiv.style.display = 'none';
+        }
+    }
+
+    // AI 生成SQL (模拟)
+    function aiGenerateSql() {
+        const demoSQL = `-- AI 根据您当前场景自动生成的SQL
+SELECT comment_text, sentiment, likes 
+FROM ${selectedTable}_comments 
+WHERE create_time >= '${document.getElementById('startDateParam').value}' 
+  AND brand_tag = '${document.getElementById('brandParam').value}'
+ORDER BY likes DESC 
+LIMIT 100;`;
+        document.getElementById('sqlEditor').value = demoSQL;
+    }
+
+    // 格式化SQL简单模拟
+    function formatSql() {
+        let sql = document.getElementById('sqlEditor').value;
+        sql = sql.replace(/\s+/g, ' ').replace(/SELECT/gi, 'SELECT\n  ').replace(/FROM/gi, '\nFROM').replace(/WHERE/gi, '\nWHERE').replace(/ORDER BY/gi, '\nORDER BY');
+        document.getElementById('sqlEditor').value = sql;
+    }
+
+    // 保存任务
+    function saveTask() {
+        alert("当前查询配置已保存至「我的任务」，可在任务调度中查看");
+    }
+
+    // 初始化事件绑定
+    function init() {
+        renderTableTree();
+        // 默认条件行保留一条
+        document.querySelectorAll('.add-condition, .remove-condition').forEach(btn => btn.remove());
+        addConditionRow('comment_text', 'contains', '');
+        // 监听数据源变化
+        document.getElementById('dataSourceSelect').addEventListener('change', (e) => {
+            selectedTable = e.target.value;
+            renderTableTree();
+            selectedFields = [];
+            renderSelectedFields();
+            updateConditionFieldsOptions();
+        });
+        document.getElementById('clearFieldsBtn').addEventListener('click', () => { selectedFields = []; renderSelectedFields(); });
+        document.getElementById('runQueryBtn').addEventListener('click', () => {
+            if (currentMode === 'visual') runVisualQuery();
+            else runSqlQuery();
+        });
+        document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+        document.getElementById('viewLogBtn').addEventListener('click', showLog);
+        document.getElementById('aiGenerateSqlBtn')?.addEventListener('click', aiGenerateSql);
+        document.getElementById('formatSqlBtn')?.addEventListener('click', formatSql);
+        document.getElementById('saveTaskBtn').addEventListener('click', saveTask);
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => setMode(btn.getAttribute('data-mode')));
+        });
+        // 初始运行展示默认数据
+        runVisualQuery();
+    }
+
+    init();
+</script>
+</body>
+</html>

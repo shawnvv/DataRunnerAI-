@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DataRunner AI - 任务调度 | 定时任务管理</title>
+    <!-- Google Font & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e9eef3;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* 整体布局 grid */
+        .app-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: #ffffff;
+            border-right: 1px solid #e9edf2;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.02);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding-left: 8px;
+        }
+        .logo-icon {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 20px;
+            background: linear-gradient(135deg, #1e293b, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-item i {
+            width: 22px;
+            font-size: 1.2rem;
+        }
+        .nav-item.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .nav-item:not(.active):hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        .bottom-info {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #edf2f7;
+            padding-left: 12px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            background: white;
+            padding: 12px 28px;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .primary-btn {
+            background: linear-gradient(95deg, #2563eb, #4f46e5);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .primary-btn:hover {
+            background: linear-gradient(95deg, #1d4ed8, #4338ca);
+            transform: translateY(-1px);
+        }
+        .secondary-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 6px 14px;
+            border-radius: 32px;
+            font-weight: 500;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .secondary-btn:hover {
+            background: #f8fafc;
+        }
+        .danger-btn {
+            background: white;
+            border: 1px solid #fee2e2;
+            color: #ef4444;
+        }
+        .danger-btn:hover {
+            background: #fef2f2;
+        }
+
+        /* 任务调度内容区 */
+        .schedule-container {
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* 任务列表卡片 */
+        .tasks-card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-table {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+        }
+        th {
+            background: #fafcff;
+            font-weight: 600;
+            color: #334155;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .status-paused {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .task-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn-sm {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #5b6e8c;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            transition: 0.1s;
+        }
+        .icon-btn-sm:hover {
+            background: #f1f5f9;
+            color: #2563eb;
+        }
+
+        /* 历史记录区域 */
+        .history-card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .modal-container {
+            background: white;
+            border-radius: 32px;
+            width: 560px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        .modal-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-label {
+            font-weight: 500;
+            font-size: 13px;
+        }
+        input, select, textarea {
+            padding: 10px 14px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        .cron-preview {
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #2563eb;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #edf2f7;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .hidden {
+            display: none;
+        }
+        .task-name-link {
+            color: #2563eb;
+            cursor: pointer;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-brain"></i></div>
+            <div class="logo-text">DataRunner AI</div>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item"><i class="fas fa-microphone-alt"></i> AI工作台</div>
+            <div class="nav-item"><i class="fas fa-chart-line"></i> 查询中心</div>
+            <div class="nav-item"><i class="fas fa-scroll"></i> Prompt工坊</div>
+            <div class="nav-item active"><i class="fas fa-clock"></i> 任务调度</div>
+            <div class="nav-item"><i class="fas fa-database"></i> 模型中心</div>
+        </div>
+        <div class="bottom-info">
+            <i class="fas fa-shield-alt"></i> 数据安全审计中<br>
+            v2.0 · 社媒分析版
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="page-title"><i class="fas fa-calendar-alt"></i> 任务调度 · 自动化跑数</div>
+            <button class="primary-btn" id="newTaskBtn"><i class="fas fa-plus"></i> 新建定时任务</button>
+        </div>
+
+        <div class="schedule-container">
+            <!-- 任务列表 -->
+            <div class="tasks-card">
+                <div class="card-header">
+                    <span><i class="fas fa-tasks"></i> 定时任务列表</span>
+                    <span style="font-size:12px; color:#6c86a3;">共 <span id="taskCount">0</span> 个任务</span>
+                </div>
+                <div class="task-table">
+                    <table id="taskTable">
+                        <thead>
+                            <tr><th>任务名称</th><th>类型</th><th>调度规则</th><th>最近执行</th><th>状态</th><th>操作</th></tr>
+                        </thead>
+                        <tbody id="taskTableBody">
+                            <!-- 动态渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 执行历史 -->
+            <div class="history-card">
+                <div class="card-header">
+                    <span><i class="fas fa-history"></i> 最近执行历史</span>
+                    <button class="secondary-btn" id="refreshHistoryBtn"><i class="fas fa-sync-alt"></i> 刷新</button>
+                </div>
+                <div class="task-table">
+                    <table>
+                        <thead><tr><th>执行时间</th><th>任务名称</th><th>状态</th><th>结果/详情</th></tr></thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- 新建/编辑任务模态框 -->
+<div id="taskModal" class="modal-overlay hidden">
+    <div class="modal-container">
+        <div class="modal-header">
+            <span id="modalTitle">新建定时任务</span>
+            <i class="fas fa-times" style="cursor:pointer;" id="closeModalBtn"></i>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <div class="form-label">任务名称 *</div>
+                <input type="text" id="taskName" placeholder="例如：每日社媒情感分析">
+            </div>
+            <div class="form-group">
+                <div class="form-label">任务类型</div>
+                <select id="taskType">
+                    <option value="ai_prompt">AI Prompt 任务</option>
+                    <option value="sql">SQL 查询任务</option>
+                    <option value="visual">可视化查询任务</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <div class="form-label">选择已有任务/模板</div>
+                <select id="taskRef">
+                    <option value="社媒情感分析 v1.1">社媒情感分析 v1.1 (AI)</option>
+                    <option value="抖音评论日报SQL">抖音评论日报SQL</option>
+                    <option value="小红书互动看板">小红书互动看板 (可视化)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <div class="form-label">调度配置</div>
+                <div style="display: flex; gap: 8px;">
+                    <select id="scheduleType" style="flex:1;">
+                        <option value="cron">Cron 表达式</option>
+                        <option value="simple">简单周期</option>
+                    </select>
+                </div>
+                <div id="cronConfig">
+                    <input type="text" id="cronExpr" placeholder="0 8 * * *" value="0 8 * * *">
+                    <div class="cron-preview">📅 每天 08:00 执行</div>
+                </div>
+                <div id="simpleConfig" class="hidden">
+                    <select id="simpleInterval">
+                        <option value="daily">每天</option>
+                        <option value="weekly">每周一</option>
+                        <option value="monthly">每月1日</option>
+                        <option value="hourly">每小时</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-label">通知方式</div>
+                <div><label><input type="checkbox" value="email"> 邮件</label> <label><input type="checkbox" value="im"> 企业IM</label></div>
+                <input type="text" placeholder="接收地址（邮箱/钉钉）" id="notifyTarget">
+            </div>
+            <div class="form-group">
+                <div class="form-label">有效期（可选）</div>
+                <div style="display: flex; gap: 8px;"><input type="date" id="validFrom"> 至 <input type="date" id="validTo"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="secondary-btn" id="cancelModalBtn">取消</button>
+            <button class="primary-btn" id="confirmTaskBtn">保存任务</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- Mock 数据 ----------
+    let tasks = [
+        { id: "task1", name: "每日社媒情感分析", type: "ai_prompt", ref: "社媒情感分析 v1.1", schedule: "0 8 * * *", scheduleDesc: "每天 08:00", status: "active", lastRun: "2025-03-23 08:00:23", lastStatus: "成功", notify: "email", validFrom: "", validTo: "" },
+        { id: "task2", name: "抖音评论日报SQL", type: "sql", ref: "抖音评论日报SQL", schedule: "0 9 * * *", scheduleDesc: "每天 09:00", status: "active", lastRun: "2025-03-23 09:05:12", lastStatus: "成功", notify: "im", validFrom: "", validTo: "" },
+        { id: "task3", name: "小红书互动周报", type: "visual", ref: "小红书互动看板", schedule: "0 10 * * 1", scheduleDesc: "每周一 10:00", status: "paused", lastRun: "2025-03-17 10:00:00", lastStatus: "失败(超时)", notify: "email,im", validFrom: "", validTo: "" }
+    ];
+
+    let history = [
+        { time: "2025-03-23 08:00:23", taskName: "每日社媒情感分析", status: "成功", detail: "导出CSV, 共1245条记录" },
+        { time: "2025-03-23 09:05:12", taskName: "抖音评论日报SQL", status: "成功", detail: "结果行数892，耗时2.3s" },
+        { time: "2025-03-22 08:00:15", taskName: "每日社媒情感分析", status: "成功", detail: "邮件已发送" },
+        { time: "2025-03-22 09:00:45", taskName: "抖音评论日报SQL", status: "成功", detail: "正常" },
+        { time: "2025-03-17 10:00:32", taskName: "小红书互动周报", status: "失败", detail: "查询超时，建议优化SQL" }
+    ];
+
+    let editingTaskId = null; // 编辑时保存ID
+
+    // 渲染任务列表
+    function renderTasks() {
+        const tbody = document.getElementById("taskTableBody");
+        document.getElementById("taskCount").innerText = tasks.length;
+        if (tasks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">暂无定时任务，点击右上角新建</td></tr>';
+            return;
+        }
+        tbody.innerHTML = tasks.map(task => `
+            <tr>
+                <td><span class="task-name-link" data-id="${task.id}">${task.name}</span></td>
+                <td>${task.type === 'ai_prompt' ? '🤖 AI任务' : (task.type === 'sql' ? '📝 SQL' : '📊 可视化')}</td>
+                <td>${task.scheduleDesc}</td>
+                <td>${task.lastRun || '—'}<br><span style="font-size:11px; color:${task.lastStatus === '成功' ? '#15803d' : '#b91c1c'}">${task.lastStatus || ''}</span></td>
+                <td><span class="status-badge ${task.status === 'active' ? 'status-active' : 'status-paused'}">${task.status === 'active' ? '运行中' : '已暂停'}</span></td>
+                <td class="task-actions">
+                    <button class="icon-btn-sm" data-action="run" data-id="${task.id}" title="立即执行"><i class="fas fa-play"></i></button>
+                    <button class="icon-btn-sm" data-action="edit" data-id="${task.id}" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button class="icon-btn-sm" data-action="toggle" data-id="${task.id}" title="${task.status === 'active' ? '暂停' : '恢复'}"><i class="fas ${task.status === 'active' ? 'fa-pause' : 'fa-play'}"></i></button>
+                    <button class="icon-btn-sm danger-btn" data-action="delete" data-id="${task.id}" title="删除"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        `).join('');
+        // 绑定任务名称点击查看详情（简单alert）
+        document.querySelectorAll('.task-name-link').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const id = el.getAttribute('data-id');
+                const task = tasks.find(t => t.id === id);
+                alert(`任务详情：\n名称：${task.name}\n类型：${task.type}\n调度：${task.scheduleDesc}\n最近执行：${task.lastRun}\n通知方式：${task.notify}`);
+            });
+        });
+        // 绑定操作按钮
+        document.querySelectorAll('[data-action="run"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                manualRunTask(id);
+            });
+        });
+        document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                openEditModal(id);
+            });
+        });
+        document.querySelectorAll('[data-action="toggle"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                toggleTaskStatus(id);
+            });
+        });
+        document.querySelectorAll('[data-action="delete"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                if (confirm("确认删除该定时任务？")) deleteTask(id);
+            });
+        });
+    }
+
+    function renderHistory() {
+        const tbody = document.getElementById("historyTableBody");
+        tbody.innerHTML = history.map(h => `
+            <tr>
+                <td>${h.time}</td>
+                <td>${h.taskName}</td>
+                <td><span class="status-badge ${h.status === '成功' ? 'status-active' : 'status-paused'}">${h.status}</span></td>
+                <td>${h.detail}</td>
+            </tr>
+        `).join('');
+    }
+
+    // 手动运行任务（模拟）
+    function manualRunTask(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        const now = new Date().toLocaleString();
+        const newHistory = {
+            time: now,
+            taskName: task.name,
+            status: Math.random() > 0.2 ? "成功" : "失败",
+            detail: `手动触发，结果${Math.random() > 0.2 ? '正常返回' : '执行异常，请检查日志'}`
+        };
+        history.unshift(newHistory);
+        task.lastRun = now;
+        task.lastStatus = newHistory.status;
+        if (history.length > 10) history.pop();
+        renderTasks();
+        renderHistory();
+        alert(`任务“${task.name}”已执行，请查看执行历史`);
+    }
+
+    function toggleTaskStatus(id) {
+        const task = tasks.find(t => t.id === id);
+        if (task) {
+            task.status = task.status === 'active' ? 'paused' : 'active';
+            renderTasks();
+        }
+    }
+
+    function deleteTask(id) {
+        tasks = tasks.filter(t => t.id !== id);
+        renderTasks();
+    }
+
+    // 打开新建模态框
+    function openNewModal() {
+        editingTaskId = null;
+        document.getElementById("modalTitle").innerText = "新建定时任务";
+        document.getElementById("taskName").value = "";
+        document.getElementById("taskType").value = "ai_prompt";
+        document.getElementById("taskRef").selectedIndex = 0;
+        document.getElementById("cronExpr").value = "0 8 * * *";
+        document.getElementById("scheduleType").value = "cron";
+        document.getElementById("simpleInterval").value = "daily";
+        document.getElementById("notifyTarget").value = "";
+        document.getElementById("validFrom").value = "";
+        document.getElementById("validTo").value = "";
+        // 显示/隐藏配置
+        toggleScheduleConfig();
+        document.getElementById("taskModal").classList.remove("hidden");
+    }
+
+    function openEditModal(id) {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        editingTaskId = id;
+        document.getElementById("modalTitle").innerText = "编辑定时任务";
+        document.getElementById("taskName").value = task.name;
+        document.getElementById("taskType").value = task.type;
+        // 简单匹配 ref
+        const refSelect = document.getElementById("taskRef");
+        for (let i = 0; i < refSelect.options.length; i++) {
+            if (refSelect.options[i].value === task.ref) {
+                refSelect.selectedIndex = i;
+                break;
+            }
+        }
+        // 调度配置
+        if (task.schedule.includes('*') && task.schedule.split(' ').length === 5) {
+            document.getElementById("scheduleType").value = "cron";
+            document.getElementById("cronExpr").value = task.schedule;
+        } else {
+            document.getElementById("scheduleType").value = "simple";
+            if (task.scheduleDesc.includes("每天")) document.getElementById("simpleInterval").value = "daily";
+            else if (task.scheduleDesc.includes("每周")) document.getElementById("simpleInterval").value = "weekly";
+            else if (task.scheduleDesc.includes("每月")) document.getElementById("simpleInterval").value = "monthly";
+            else document.getElementById("simpleInterval").value = "hourly";
+        }
+        toggleScheduleConfig();
+        document.getElementById("notifyTarget").value = task.notify;
+        document.getElementById("validFrom").value = task.validFrom || "";
+        document.getElementById("validTo").value = task.validTo || "";
+        document.getElementById("taskModal").classList.remove("hidden");
+    }
+
+    function toggleScheduleConfig() {
+        const scheduleType = document.getElementById("scheduleType").value;
+        const cronDiv = document.getElementById("cronConfig");
+        const simpleDiv = document.getElementById("simpleConfig");
+        if (scheduleType === "cron") {
+            cronDiv.classList.remove("hidden");
+            simpleDiv.classList.add("hidden");
+            updateCronPreview();
+        } else {
+            cronDiv.classList.add("hidden");
+            simpleDiv.classList.remove("hidden");
+        }
+    }
+
+    function updateCronPreview() {
+        const cron = document.getElementById("cronExpr").value;
+        let desc = "自定义周期";
+        if (cron === "0 8 * * *") desc = "每天 08:00";
+        else if (cron === "0 9 * * *") desc = "每天 09:00";
+        else if (cron === "0 10 * * 1") desc = "每周一 10:00";
+        else if (cron === "0 0 1 * *") desc = "每月1日 00:00";
+        document.querySelector("#cronConfig .cron-preview").innerHTML = `📅 ${desc}`;
+    }
+
+    function saveTask() {
+        const name = document.getElementById("taskName").value.trim();
+        if (!name) { alert("请输入任务名称"); return; }
+        const type = document.getElementById("taskType").value;
+        const ref = document.getElementById("taskRef").value;
+        let scheduleExpr = "";
+        let scheduleDesc = "";
+        const scheduleType = document.getElementById("scheduleType").value;
+        if (scheduleType === "cron") {
+            scheduleExpr = document.getElementById("cronExpr").value;
+            // 简单生成描述
+            if (scheduleExpr === "0 8 * * *") scheduleDesc = "每天 08:00";
+            else if (scheduleExpr === "0 9 * * *") scheduleDesc = "每天 09:00";
+            else if (scheduleExpr === "0 10 * * 1") scheduleDesc = "每周一 10:00";
+            else scheduleDesc = "自定义Cron: " + scheduleExpr;
+        } else {
+            const interval = document.getElementById("simpleInterval").value;
+            if (interval === "daily") { scheduleExpr = "0 8 * * *"; scheduleDesc = "每天 08:00"; }
+            else if (interval === "weekly") { scheduleExpr = "0 9 * * 1"; scheduleDesc = "每周一 09:00"; }
+            else if (interval === "monthly") { scheduleExpr = "0 0 1 * *"; scheduleDesc = "每月1日 00:00"; }
+            else if (interval === "hourly") { scheduleExpr = "0 * * * *"; scheduleDesc = "每小时整点"; }
+        }
+        const notify = document.getElementById("notifyTarget").value;
+        const validFrom = document.getElementById("validFrom").value;
+        const validTo = document.getElementById("validTo").value;
+
+        if (editingTaskId) {
+            // 编辑更新
+            const idx = tasks.findIndex(t => t.id === editingTaskId);
+            if (idx !== -1) {
+                tasks[idx] = { ...tasks[idx], name, type, ref, schedule: scheduleExpr, scheduleDesc, notify, validFrom, validTo };
+                renderTasks();
+            }
+        } else {
+            // 新建
+            const newId = "task" + (tasks.length + 1 + Math.floor(Math.random() * 1000));
+            const newTask = {
+                id: newId,
+                name,
+                type,
+                ref,
+                schedule: scheduleExpr,
+                scheduleDesc,
+                status: "active",
+                lastRun: "",
+                lastStatus: "",
+                notify,
+                validFrom,
+                validTo
+            };
+            tasks.push(newTask);
+            renderTasks();
+        }
+        closeModal();
+    }
+
+    function closeModal() {
+        document.getElementById("taskModal").classList.add("hidden");
+    }
+
+    // 监听事件
+    document.getElementById("newTaskBtn").addEventListener("click", openNewModal);
+    document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+    document.getElementById("cancelModalBtn").addEventListener("click", closeModal);
+    document.getElementById("confirmTaskBtn").addEventListener("click", saveTask);
+    document.getElementById("scheduleType").addEventListener("change", toggleScheduleConfig);
+    document.getElementById("cronExpr").addEventListener("input", updateCronPreview);
+    document.getElementById("refreshHistoryBtn").addEventListener("click", () => {
+        renderHistory();
+        alert("历史记录已刷新");
+    });
+
+    // 初始化
+    renderTasks();
+    renderHistory();
+</script>
+</body>
+</html>

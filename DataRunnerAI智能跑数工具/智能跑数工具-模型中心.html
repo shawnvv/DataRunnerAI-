@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DataRunner AI - 模型中心 | 模型管理与用量监控</title>
+    <!-- Google Font & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e9eef3;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* 整体布局 grid */
+        .app-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: #ffffff;
+            border-right: 1px solid #e9edf2;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.02);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding-left: 8px;
+        }
+        .logo-icon {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 20px;
+            background: linear-gradient(135deg, #1e293b, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-item i {
+            width: 22px;
+            font-size: 1.2rem;
+        }
+        .nav-item.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .nav-item:not(.active):hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        .bottom-info {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #edf2f7;
+            padding-left: 12px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            background: white;
+            padding: 12px 28px;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .primary-btn {
+            background: linear-gradient(95deg, #2563eb, #4f46e5);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .primary-btn:hover {
+            background: linear-gradient(95deg, #1d4ed8, #4338ca);
+            transform: translateY(-1px);
+        }
+        .secondary-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 6px 14px;
+            border-radius: 32px;
+            font-weight: 500;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .secondary-btn:hover {
+            background: #f8fafc;
+        }
+
+        /* 内容区域 */
+        .model-center {
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* 统计卡片行 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            padding: 20px;
+            transition: 0.2s;
+        }
+        .stat-title {
+            font-size: 13px;
+            color: #6c86a3;
+            margin-bottom: 8px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .stat-sub {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 6px;
+        }
+
+        /* 模型列表卡片 */
+        .models-card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .model-table {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+        }
+        th {
+            background: #fafcff;
+            font-weight: 600;
+            color: #334155;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-enabled {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .status-disabled {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .model-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn-sm {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #5b6e8c;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            transition: 0.1s;
+        }
+        .icon-btn-sm:hover {
+            background: #f1f5f9;
+            color: #2563eb;
+        }
+        .usage-chart {
+            padding: 20px;
+            height: 280px;
+        }
+
+        /* 权限标签 */
+        .perm-tag {
+            background: #eef2ff;
+            color: #2563eb;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
+            margin: 2px 4px 2px 0;
+            display: inline-block;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .modal-container {
+            background: white;
+            border-radius: 32px;
+            width: 560px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        .modal-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-label {
+            font-weight: 500;
+            font-size: 13px;
+        }
+        input, select, textarea {
+            padding: 10px 14px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #edf2f7;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-brain"></i></div>
+            <div class="logo-text">DataRunner AI</div>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item"><i class="fas fa-microphone-alt"></i> AI工作台</div>
+            <div class="nav-item"><i class="fas fa-chart-line"></i> 查询中心</div>
+            <div class="nav-item"><i class="fas fa-scroll"></i> Prompt工坊</div>
+            <div class="nav-item"><i class="fas fa-clock"></i> 任务调度</div>
+            <div class="nav-item active"><i class="fas fa-database"></i> 模型中心</div>
+        </div>
+        <div class="bottom-info">
+            <i class="fas fa-shield-alt"></i> 数据安全审计中<br>
+            v2.0 · 社媒分析版
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="page-title"><i class="fas fa-robot"></i> 模型中心 · 配置与用量监控</div>
+            <button class="primary-btn" id="addModelBtn"><i class="fas fa-plus"></i> 添加模型</button>
+        </div>
+
+        <div class="model-center">
+            <!-- 统计卡片 -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-title"><i class="fas fa-charging-station"></i> 活跃模型</div>
+                    <div class="stat-value" id="activeModelCount">0</div>
+                    <div class="stat-sub">共 <span id="totalModelCount">0</span> 个模型</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title"><i class="fas fa-chart-line"></i> 今日调用</div>
+                    <div class="stat-value" id="todayCalls">0</div>
+                    <div class="stat-sub">较昨日 +12%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title"><i class="fas fa-dollar-sign"></i> 本月成本</div>
+                    <div class="stat-value" id="monthCost">$0</div>
+                    <div class="stat-sub">预算剩余 72%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title"><i class="fas fa-tachometer-alt"></i> 平均响应</div>
+                    <div class="stat-value" id="avgLatency">0ms</div>
+                    <div class="stat-sub">P95: 2.3s</div>
+                </div>
+            </div>
+
+            <!-- 模型列表 -->
+            <div class="models-card">
+                <div class="card-header">
+                    <span><i class="fas fa-list-ul"></i> 已接入模型</span>
+                    <button class="secondary-btn" id="refreshModelsBtn"><i class="fas fa-sync-alt"></i> 刷新</button>
+                </div>
+                <div class="model-table">
+                    <table id="modelTable">
+                        <thead>
+                            <tr><th>模型名称</th><th>版本</th><th>状态</th><th>今日调用</th><th>累计成本</th><th>授权角色</th><th>操作</th>
+                        </thead>
+                        <tbody id="modelTableBody">
+                            <!-- 动态渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 用量趋势图 -->
+            <div class="models-card">
+                <div class="card-header">
+                    <span><i class="fas fa-chart-line"></i> 近7天调用趋势</span>
+                    <div>
+                        <select id="chartModelSelect" style="border:none; background:#f1f5f9; border-radius: 20px; padding: 4px 12px;">
+                            <option value="all">所有模型</option>
+                            <option value="social_v2">内部社媒模型 v2</option>
+                            <option value="gpt4">GPT-4 Turbo</option>
+                            <option value="claude">Claude 3.5 Sonnet</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="usage-chart">
+                    <canvas id="trendChart" width="800" height="240" style="width:100%; height:240px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- 添加/编辑模型模态框 -->
+<div id="modelModal" class="modal-overlay hidden">
+    <div class="modal-container">
+        <div class="modal-header">
+            <span id="modalTitle">添加模型</span>
+            <i class="fas fa-times" style="cursor:pointer;" id="closeModalBtn"></i>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <div class="form-label">模型名称 *</div>
+                <input type="text" id="modelName" placeholder="例如：GPT-4 Turbo">
+            </div>
+            <div class="form-group">
+                <div class="form-label">版本标识</div>
+                <input type="text" id="modelVersion" placeholder="v1.0 / gpt-4-turbo">
+            </div>
+            <div class="form-group">
+                <div class="form-label">API 端点 / 配置</div>
+                <input type="text" id="modelEndpoint" placeholder="https://api.openai.com/v1/chat/completions">
+            </div>
+            <div class="form-group">
+                <div class="form-label">API Key（加密存储）</div>
+                <input type="password" id="modelApiKey" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+                <div class="form-label">默认参数（温度、max_tokens）</div>
+                <textarea id="modelParams" rows="2" placeholder='{"temperature": 0.7, "max_tokens": 2000}'></textarea>
+            </div>
+            <div class="form-group">
+                <div class="form-label">授权角色（可多选）</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    <label><input type="checkbox" value="admin"> 管理员</label>
+                    <label><input type="checkbox" value="analyst"> 数据分析师</label>
+                    <label><input type="checkbox" value="operator"> 业务运营</label>
+                    <label><input type="checkbox" value="developer"> 开发者</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-label">成本配置（$/1K tokens）</div>
+                <div style="display: flex; gap: 8px;"><input type="text" placeholder="输入价格" id="inputPrice" style="flex:1;"> <span>输入</span> <input type="text" placeholder="输出价格" id="outputPrice" style="flex:1;"> <span>输出</span></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="secondary-btn" id="cancelModalBtn">取消</button>
+            <button class="primary-btn" id="confirmModelBtn">保存模型</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- Mock 模型数据 ----------
+    let models = [
+        { id: "m1", name: "内部社媒模型", version: "v2", status: "enabled", todayCalls: 1245, totalCost: 89.5, roles: ["admin", "analyst"], endpoint: "https://internal.ai/social", apiKey: "sk-***", params: '{"temperature":0.7}', pricing: { input: 0.002, output: 0.004 } },
+        { id: "m2", name: "GPT-4 Turbo", version: "gpt-4-turbo", status: "enabled", todayCalls: 876, totalCost: 243.2, roles: ["admin", "analyst", "developer"], endpoint: "https://api.openai.com/v1", apiKey: "sk-***", params: '{"temperature":0.8}', pricing: { input: 0.01, output: 0.03 } },
+        { id: "m3", name: "Claude 3.5 Sonnet", version: "claude-3.5", status: "disabled", todayCalls: 0, totalCost: 0, roles: ["admin"], endpoint: "https://api.anthropic.com", apiKey: "sk-ant-***", params: '{"temperature":0.6}', pricing: { input: 0.008, output: 0.024 } }
+    ];
+
+    let editingModelId = null;
+
+    // 统计数据 (模拟)
+    let stats = {
+        activeModels: 2,
+        totalModels: 3,
+        todayCalls: 2121,
+        monthCost: 332.7,
+        avgLatency: 1240
+    };
+
+    // 调用趋势数据 (最近7天)
+    let trendData = {
+        dates: ['03-17', '03-18', '03-19', '03-20', '03-21', '03-22', '03-23'],
+        social_v2: [1020, 1150, 1230, 1190, 1340, 1280, 1245],
+        gpt4: [690, 720, 780, 810, 850, 880, 876],
+        claude: [0, 0, 0, 0, 0, 0, 0]
+    };
+
+    let chartInstance = null;
+
+    // 渲染模型表格
+    function renderModels() {
+        const tbody = document.getElementById("modelTableBody");
+        tbody.innerHTML = models.map(model => `
+            <tr>
+                <td><strong>${model.name}</strong><br><span style="font-size:11px; color:#6c86a3;">${model.version}</span></td>
+                <td>${model.version}</td>
+                <td><span class="status-badge ${model.status === 'enabled' ? 'status-enabled' : 'status-disabled'}">${model.status === 'enabled' ? '已启用' : '已禁用'}</span></td>
+                <td>${model.todayCalls.toLocaleString()}</td>
+                <td>$${model.totalCost.toFixed(2)}</td>
+                <td>${model.roles.map(r => `<span class="perm-tag">${r === 'admin' ? '管理员' : (r === 'analyst' ? '分析师' : (r === 'operator' ? '运营' : '开发'))}</span>`).join('')}</td>
+                <td class="model-actions">
+                    <button class="icon-btn-sm" data-action="edit" data-id="${model.id}" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button class="icon-btn-sm" data-action="toggle" data-id="${model.id}" title="${model.status === 'enabled' ? '禁用' : '启用'}"><i class="fas ${model.status === 'enabled' ? 'fa-pause' : 'fa-play'}"></i></button>
+                    <button class="icon-btn-sm" data-action="delete" data-id="${model.id}" title="删除"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        `).join('');
+        // 绑定按钮事件
+        document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+            btn.addEventListener('click', (e) => openEditModal(btn.getAttribute('data-id')));
+        });
+        document.querySelectorAll('[data-action="toggle"]').forEach(btn => {
+            btn.addEventListener('click', (e) => toggleModelStatus(btn.getAttribute('data-id')));
+        });
+        document.querySelectorAll('[data-action="delete"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (confirm("确定删除该模型配置吗？")) deleteModel(btn.getAttribute('data-id'));
+            });
+        });
+        // 更新统计卡片
+        updateStats();
+    }
+
+    function updateStats() {
+        const active = models.filter(m => m.status === 'enabled').length;
+        const total = models.length;
+        const todaySum = models.reduce((sum, m) => sum + m.todayCalls, 0);
+        const monthSum = models.reduce((sum, m) => sum + m.totalCost, 0);
+        // 模拟平均延迟
+        const avgLat = Math.floor(Math.random() * 500 + 1000);
+        document.getElementById("activeModelCount").innerText = active;
+        document.getElementById("totalModelCount").innerText = total;
+        document.getElementById("todayCalls").innerText = todaySum.toLocaleString();
+        document.getElementById("monthCost").innerText = `$${monthSum.toFixed(2)}`;
+        document.getElementById("avgLatency").innerText = `${avgLat}ms`;
+    }
+
+    function toggleModelStatus(id) {
+        const model = models.find(m => m.id === id);
+        if (model) {
+            model.status = model.status === 'enabled' ? 'disabled' : 'enabled';
+            renderModels();
+            updateTrendChart(); // 刷新图表可能影响数据
+        }
+    }
+
+    function deleteModel(id) {
+        models = models.filter(m => m.id !== id);
+        renderModels();
+        updateTrendChart();
+    }
+
+    // 打开编辑模态框
+    function openEditModal(id) {
+        const model = models.find(m => m.id === id);
+        if (!model) return;
+        editingModelId = id;
+        document.getElementById("modalTitle").innerText = "编辑模型";
+        document.getElementById("modelName").value = model.name;
+        document.getElementById("modelVersion").value = model.version;
+        document.getElementById("modelEndpoint").value = model.endpoint || "";
+        document.getElementById("modelApiKey").value = "";
+        document.getElementById("modelParams").value = model.params;
+        // 角色复选框
+        const roleChecks = document.querySelectorAll('#modelModal input[type="checkbox"]');
+        roleChecks.forEach(cb => {
+            cb.checked = model.roles.includes(cb.value);
+        });
+        document.getElementById("inputPrice").value = model.pricing?.input || "";
+        document.getElementById("outputPrice").value = model.pricing?.output || "";
+        document.getElementById("modelModal").classList.remove("hidden");
+    }
+
+    function openAddModal() {
+        editingModelId = null;
+        document.getElementById("modalTitle").innerText = "添加模型";
+        document.getElementById("modelName").value = "";
+        document.getElementById("modelVersion").value = "";
+        document.getElementById("modelEndpoint").value = "";
+        document.getElementById("modelApiKey").value = "";
+        document.getElementById("modelParams").value = '{"temperature": 0.7, "max_tokens": 2000}';
+        document.querySelectorAll('#modelModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.getElementById("inputPrice").value = "";
+        document.getElementById("outputPrice").value = "";
+        document.getElementById("modelModal").classList.remove("hidden");
+    }
+
+    function saveModel() {
+        const name = document.getElementById("modelName").value.trim();
+        if (!name) { alert("请输入模型名称"); return; }
+        const version = document.getElementById("modelVersion").value.trim();
+        const endpoint = document.getElementById("modelEndpoint").value;
+        const apiKey = document.getElementById("modelApiKey").value;
+        const params = document.getElementById("modelParams").value;
+        const roles = Array.from(document.querySelectorAll('#modelModal input[type="checkbox"]:checked')).map(cb => cb.value);
+        const inputPrice = parseFloat(document.getElementById("inputPrice").value);
+        const outputPrice = parseFloat(document.getElementById("outputPrice").value);
+        const pricing = { input: isNaN(inputPrice) ? 0 : inputPrice, output: isNaN(outputPrice) ? 0 : outputPrice };
+        if (editingModelId) {
+            const idx = models.findIndex(m => m.id === editingModelId);
+            if (idx !== -1) {
+                models[idx] = { ...models[idx], name, version, endpoint, apiKey: apiKey || models[idx].apiKey, params, roles, pricing };
+                renderModels();
+            }
+        } else {
+            const newId = "m" + (models.length + 1 + Math.floor(Math.random() * 1000));
+            const newModel = {
+                id: newId,
+                name,
+                version,
+                status: "enabled",
+                todayCalls: 0,
+                totalCost: 0,
+                roles,
+                endpoint,
+                apiKey: apiKey || "sk-***",
+                params,
+                pricing
+            };
+            models.push(newModel);
+            renderModels();
+        }
+        closeModal();
+    }
+
+    function closeModal() {
+        document.getElementById("modelModal").classList.add("hidden");
+    }
+
+    // 趋势图表
+    function updateTrendChart() {
+        const selected = document.getElementById("chartModelSelect").value;
+        let dataset = [];
+        let labels = trendData.dates;
+        if (selected === "all") {
+            dataset = [
+                { label: "内部社媒模型", data: trendData.social_v2, borderColor: "#3b82f6", tension: 0.3 },
+                { label: "GPT-4 Turbo", data: trendData.gpt4, borderColor: "#f59e0b", tension: 0.3 },
+                { label: "Claude", data: trendData.claude, borderColor: "#8b5cf6", tension: 0.3 }
+            ];
+        } else if (selected === "social_v2") {
+            dataset = [{ label: "内部社媒模型", data: trendData.social_v2, borderColor: "#3b82f6" }];
+        } else if (selected === "gpt4") {
+            dataset = [{ label: "GPT-4 Turbo", data: trendData.gpt4, borderColor: "#f59e0b" }];
+        } else if (selected === "claude") {
+            dataset = [{ label: "Claude", data: trendData.claude, borderColor: "#8b5cf6" }];
+        }
+        const ctx = document.getElementById("trendChart").getContext("2d");
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: dataset },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, title: { display: true, text: '调用次数' } } } }
+        });
+    }
+
+    // 刷新模型 & 模拟数据更新
+    function refreshData() {
+        // 随机微调调用数
+        models.forEach(m => {
+            if (m.status === 'enabled') {
+                m.todayCalls = Math.floor(Math.random() * 200) + 800;
+                m.totalCost += (Math.random() * 10).toFixed(2);
+            }
+        });
+        renderModels();
+        updateTrendChart();
+        alert("数据已刷新");
+    }
+
+    // 初始化事件
+    document.getElementById("addModelBtn").addEventListener("click", openAddModal);
+    document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+    document.getElementById("cancelModalBtn").addEventListener("click", closeModal);
+    document.getElementById("confirmModelBtn").addEventListener("click", saveModel);
+    document.getElementById("refreshModelsBtn").addEventListener("click", refreshData);
+    document.getElementById("chartModelSelect").addEventListener("change", updateTrendChart);
+
+    // 初始化
+    renderModels();
+    updateTrendChart();
+</script>
+</body>
+</html>

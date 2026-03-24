@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DataRunner AI - Prompt工坊 | 模板管理与版本控制</title>
+    <!-- Google Font & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e9eef3;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* 整体布局 grid */
+        .app-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: #ffffff;
+            border-right: 1px solid #e9edf2;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.02);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding-left: 8px;
+        }
+        .logo-icon {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 20px;
+            background: linear-gradient(135deg, #1e293b, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-item i {
+            width: 22px;
+            font-size: 1.2rem;
+        }
+        .nav-item.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .nav-item:not(.active):hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        .bottom-info {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #edf2f7;
+            padding-left: 12px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            background: white;
+            padding: 12px 28px;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .primary-btn {
+            background: linear-gradient(95deg, #2563eb, #4f46e5);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .secondary-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .secondary-btn:hover {
+            background: #f8fafc;
+        }
+
+        /* 工坊主体：左右结构 */
+        .workshop {
+            padding: 24px 28px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* 左侧模板库 */
+        .template-library {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            max-height: 100%;
+        }
+        .library-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-box {
+            background: #f8fafc;
+            border-radius: 32px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 13px;
+            width: 140px;
+        }
+        .template-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        .template-card {
+            padding: 14px;
+            margin-bottom: 8px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: 0.1s;
+            border: 1px solid transparent;
+        }
+        .template-card.active {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+        .template-card:hover:not(.active) {
+            background: #f8fafc;
+        }
+        .template-name {
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .template-desc {
+            font-size: 12px;
+            color: #5b6e8c;
+            line-height: 1.4;
+        }
+        .template-badge {
+            font-size: 10px;
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        /* 右侧编辑区 */
+        .editor-panel {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .editor-tabs {
+            display: flex;
+            border-bottom: 1px solid #edf2f7;
+            padding: 0 20px;
+            gap: 24px;
+        }
+        .editor-tab {
+            padding: 14px 0;
+            font-weight: 500;
+            font-size: 14px;
+            background: none;
+            border: none;
+            color: #5b6e8c;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .editor-tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .tab-pane {
+            display: none;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            font-family: 'Inter', monospace;
+            font-size: 13px;
+        }
+        textarea {
+            resize: vertical;
+            font-family: monospace;
+        }
+        .variable-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        .variable-row input {
+            flex: 1;
+        }
+        .version-timeline {
+            margin-top: 16px;
+            border-left: 2px solid #e2e8f0;
+            padding-left: 20px;
+        }
+        .version-item {
+            margin-bottom: 16px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 12px;
+        }
+        .version-item.active {
+            background: #f1f5f9;
+        }
+        .test-output {
+            background: #f9fafc;
+            border-radius: 20px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 14px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        .flex-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-brain"></i></div>
+            <div class="logo-text">DataRunner AI</div>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item"><i class="fas fa-microphone-alt"></i> AI工作台</div>
+            <div class="nav-item"><i class="fas fa-chart-line"></i> 查询中心</div>
+            <div class="nav-item active"><i class="fas fa-scroll"></i> Prompt工坊</div>
+            <div class="nav-item"><i class="fas fa-clock"></i> 任务调度</div>
+            <div class="nav-item"><i class="fas fa-database"></i> 模型中心</div>
+        </div>
+        <div class="bottom-info">
+            <i class="fas fa-shield-alt"></i> 数据安全审计中<br>
+            v2.0 · 社媒分析版
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="page-title"><i class="fas fa-feather-alt"></i> Prompt工坊 · 模板与版本管理</div>
+            <div class="action-buttons">
+                <button class="secondary-btn" id="newTemplateBtn"><i class="fas fa-plus"></i> 新建模板</button>
+                <button class="primary-btn" id="saveTemplateBtn"><i class="far fa-save"></i> 保存新版本</button>
+            </div>
+        </div>
+
+        <div class="workshop">
+            <!-- 左侧：模板库 -->
+            <div class="template-library">
+                <div class="library-header">
+                    <span style="font-weight:600;">📚 我的模板</span>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchTemplate" placeholder="搜索模板...">
+                    </div>
+                </div>
+                <div class="template-list" id="templateList">
+                    <!-- 动态渲染模板列表 -->
+                </div>
+            </div>
+
+            <!-- 右侧：编辑区 -->
+            <div class="editor-panel">
+                <div class="editor-tabs">
+                    <button class="editor-tab active" data-tab="edit">✍️ 编辑模板</button>
+                    <button class="editor-tab" data-tab="versions">⏱️ 版本历史</button>
+                    <button class="editor-tab" data-tab="test">🧪 测试运行</button>
+                </div>
+
+                <!-- 编辑模板 Tab -->
+                <div class="tab-pane active" id="editTab">
+                    <div class="form-group">
+                        <div class="form-label">模板名称</div>
+                        <input type="text" id="templateName" placeholder="例如：社媒情感分析 v2">
+                    </div>
+                    <div class="form-group">
+                        <div class="form-label">描述</div>
+                        <textarea id="templateDesc" rows="2" placeholder="简要描述该模板的用途"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-label">适用模型</div>
+                        <select id="templateModel">
+                            <option value="social_v2">内部社媒模型 v2</option>
+                            <option value="gpt4">GPT-4 Turbo</option>
+                            <option value="claude">Claude 3.5 Sonnet</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-label">Prompt 内容 <span style="font-weight:normal; font-size:12px;">(支持变量 {{variable}})</span></div>
+                        <textarea id="promptContent" rows="8" placeholder="输入提示词，可使用 {{变量名}} 占位符"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-label">变量定义 <button type="button" class="secondary-btn" id="addVariableBtn" style="padding:2px 8px; font-size:12px;"><i class="fas fa-plus"></i> 添加变量</button></div>
+                        <div id="variablesContainer"></div>
+                    </div>
+                    <div class="flex-btns">
+                        <button class="secondary-btn" id="resetTemplateBtn">重置</button>
+                        <button class="primary-btn" id="saveVersionBtn"><i class="fas fa-code-branch"></i> 保存为新版本</button>
+                    </div>
+                </div>
+
+                <!-- 版本历史 Tab -->
+                <div class="tab-pane" id="versionsTab">
+                    <div id="versionList" class="version-timeline">
+                        <!-- 动态版本列表 -->
+                    </div>
+                </div>
+
+                <!-- 测试运行 Tab -->
+                <div class="tab-pane" id="testTab">
+                    <div class="form-group">
+                        <div class="form-label">测试变量值</div>
+                        <div id="testVariablesPanel"></div>
+                    </div>
+                    <button class="primary-btn" id="runTestBtn" style="width:100%;"><i class="fas fa-play"></i> 运行测试</button>
+                    <div id="testOutput" class="test-output" style="margin-top: 16px;">
+                        <i class="fas fa-robot"></i> 测试输出将显示在此处
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // ---------- Mock 模板数据 ----------
+    let templates = [
+        {
+            id: "t1",
+            name: "社媒情感分析",
+            description: "分析特定品牌在抖音/小红书的评论情感分布及高频关键词",
+            model: "social_v2",
+            prompt: "分析最近一周{{platform}}上关于“{{brand}}”的评论数据，请完成：\n1. 按情感分类（正面/中性/负面）统计数量并计算占比；\n2. 提取负面评论中的高频关键词（Top5）；\n3. 总结主要负面反馈趋势。",
+            variables: [
+                { name: "platform", default: "抖音", type: "text" },
+                { name: "brand", default: "XX品牌", type: "text" }
+            ],
+            versions: [
+                { version: "v1.0", date: "2025-01-10", content: "初始版本，基础情感分析", promptContent: "分析最近一周{{platform}}上关于“{{brand}}”的评论数据，请完成：\n1. 按情感分类（正面/中性/负面）统计数量并计算占比；\n2. 提取负面评论中的高频关键词（Top5）。", variables: [{ name: "platform", default: "抖音" },{ name: "brand", default: "XX品牌" }] },
+                { version: "v1.1", date: "2025-02-15", content: "增加趋势总结", promptContent: "分析最近一周{{platform}}上关于“{{brand}}”的评论数据，请完成：\n1. 按情感分类（正面/中性/负面）统计数量并计算占比；\n2. 提取负面评论中的高频关键词（Top5）；\n3. 总结主要负面反馈趋势。", variables: [{ name: "platform", default: "抖音" },{ name: "brand", default: "XX品牌" }] }
+            ]
+        },
+        {
+            id: "t2",
+            name: "竞品趋势对比",
+            description: "对比两周内竞品话题声量变化，找出高互动笔记",
+            model: "gpt4",
+            prompt: "对比{{start_date}}至{{end_date}}期间小红书竞品{{competitor}}和{{our_brand}}的话题声量变化，找出互动率最高的5篇笔记及其核心标签。",
+            variables: [
+                { name: "start_date", default: "2025-01-01", type: "date" },
+                { name: "end_date", default: "2025-01-31", type: "date" },
+                { name: "competitor", default: "竞品A", type: "text" },
+                { name: "our_brand", default: "XX品牌", type: "text" }
+            ],
+            versions: [
+                { version: "v1.0", date: "2025-01-20", content: "初始竞品对比", promptContent: "对比{{start_date}}至{{end_date}}期间小红书竞品{{competitor}}和{{our_brand}}的话题声量变化，找出互动率最高的5篇笔记及其核心标签。", variables: [{ name: "start_date", default: "2025-01-01" },{ name: "end_date", default: "2025-01-31" },{ name: "competitor", default: "竞品A" },{ name: "our_brand", default: "XX品牌" }] }
+            ]
+        },
+        {
+            id: "t3",
+            name: "负面归因聚类",
+            description: "针对特定负面问题归因聚类，提供优化建议",
+            model: "claude",
+            prompt: "针对微博用户提及“{{issue_keyword}}”的评论进行归因聚类，提供优化建议。",
+            variables: [
+                { name: "issue_keyword", default: "物流慢", type: "text" }
+            ],
+            versions: [
+                { version: "v1.0", date: "2025-02-01", content: "负面归因初版", promptContent: "针对微博用户提及“{{issue_keyword}}”的评论进行归因聚类，提供优化建议。", variables: [{ name: "issue_keyword", default: "物流慢" }] }
+            ]
+        }
+    ];
+
+    let currentTemplateId = "t1";
+    let currentEditingVersion = null; // 当前编辑的版本对象（深拷贝）
+    let versionHistory = []; // 存储当前模板的版本列表（引用）
+
+    // 辅助函数：获取模板
+    function getTemplateById(id) {
+        return templates.find(t => t.id === id);
+    }
+
+    // 加载当前模板到编辑区
+    function loadTemplateToEditor(template) {
+        document.getElementById("templateName").value = template.name;
+        document.getElementById("templateDesc").value = template.description;
+        document.getElementById("templateModel").value = template.model;
+        document.getElementById("promptContent").value = template.prompt;
+        // 渲染变量区域
+        renderVariables(template.variables);
+        // 保存当前编辑版本用于比较
+        currentEditingVersion = JSON.parse(JSON.stringify(template));
+        // 同时更新版本历史列表
+        renderVersionList(template);
+        // 重新生成测试面板的变量输入
+        renderTestVariables(template.variables);
+    }
+
+    function renderVariables(variables) {
+        const container = document.getElementById("variablesContainer");
+        if (!variables.length) {
+            container.innerHTML = '<div style="color:#94a3b8; font-size:12px;">暂无变量，点击上方按钮添加</div>';
+            return;
+        }
+        let html = '';
+        variables.forEach((v, idx) => {
+            html += `
+                <div class="variable-row" data-idx="${idx}">
+                    <input type="text" placeholder="变量名" value="${v.name}" class="var-name">
+                    <input type="text" placeholder="默认值" value="${v.default}" class="var-default">
+                    <button class="secondary-btn remove-var" style="padding:4px 12px;"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        // 绑定删除事件
+        document.querySelectorAll('.remove-var').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const row = btn.closest('.variable-row');
+                const idx = row.getAttribute('data-idx');
+                if (idx !== null) {
+                    currentEditingVersion.variables.splice(parseInt(idx), 1);
+                    renderVariables(currentEditingVersion.variables);
+                    renderTestVariables(currentEditingVersion.variables);
+                }
+            });
+        });
+        // 绑定输入变化同步
+        document.querySelectorAll('.var-name').forEach((input, i) => {
+            input.addEventListener('change', (e) => {
+                if (currentEditingVersion.variables[i]) currentEditingVersion.variables[i].name = e.target.value;
+                renderTestVariables(currentEditingVersion.variables);
+            });
+        });
+        document.querySelectorAll('.var-default').forEach((input, i) => {
+            input.addEventListener('change', (e) => {
+                if (currentEditingVersion.variables[i]) currentEditingVersion.variables[i].default = e.target.value;
+                renderTestVariables(currentEditingVersion.variables);
+            });
+        });
+    }
+
+    function renderTestVariables(variables) {
+        const container = document.getElementById("testVariablesPanel");
+        if (!variables.length) {
+            container.innerHTML = '<div style="color:#94a3b8;">无变量，无需填写</div>';
+            return;
+        }
+        let html = '';
+        variables.forEach(v => {
+            html += `
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:12px; font-weight:500;">${v.name}</label>
+                    <input type="text" class="test-var-input" data-var="${v.name}" placeholder="默认: ${v.default}" value="${v.default}">
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderVersionList(template) {
+        const container = document.getElementById("versionList");
+        if (!template.versions || template.versions.length === 0) {
+            container.innerHTML = '<div>暂无版本记录</div>';
+            return;
+        }
+        let html = '';
+        template.versions.slice().reverse().forEach((ver, idx) => {
+            const isLatest = idx === 0;
+            html += `
+                <div class="version-item" data-version="${ver.version}" style="cursor:pointer;">
+                    <div style="font-weight:600;">${ver.version} ${isLatest ? '<span class="badge" style="background:#dbeafe;">最新</span>' : ''}</div>
+                    <div style="font-size:11px; color:#6c86a3;">${ver.date}</div>
+                    <div style="font-size:12px;">${ver.content}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        // 绑定版本点击加载
+        document.querySelectorAll('.version-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const versionStr = el.getAttribute('data-version');
+                const version = template.versions.find(v => v.version === versionStr);
+                if (version) {
+                    // 加载版本内容到编辑器（不覆盖原模板？作为预览加载到编辑区，但提示）
+                    document.getElementById("promptContent").value = version.promptContent;
+                    document.getElementById("templateName").value = template.name + " (预览)";
+                    // 变量同步
+                    if (version.variables) {
+                        currentEditingVersion.variables = JSON.parse(JSON.stringify(version.variables));
+                        renderVariables(currentEditingVersion.variables);
+                        renderTestVariables(currentEditingVersion.variables);
+                    }
+                    alert(`已加载版本 ${version.version} 的内容，如需保存请点击「保存新版本」。`);
+                }
+            });
+        });
+    }
+
+    // 保存新版本
+    function saveNewVersion() {
+        const template = getTemplateById(currentTemplateId);
+        const newVersionName = prompt("请输入新版本号 (例如 v1.2)", "v" + ((template.versions.length+1)+".0"));
+        if (!newVersionName) return;
+        const newVersion = {
+            version: newVersionName,
+            date: new Date().toISOString().slice(0,10),
+            content: document.getElementById("templateDesc").value,
+            promptContent: document.getElementById("promptContent").value,
+            variables: JSON.parse(JSON.stringify(currentEditingVersion.variables))
+        };
+        template.versions.push(newVersion);
+        // 同时更新模板主内容（可选，保持最新）
+        template.name = document.getElementById("templateName").value;
+        template.description = document.getElementById("templateDesc").value;
+        template.model = document.getElementById("templateModel").value;
+        template.prompt = document.getElementById("promptContent").value;
+        template.variables = JSON.parse(JSON.stringify(currentEditingVersion.variables));
+        // 刷新界面
+        renderTemplateList();
+        loadTemplateToEditor(template);
+        alert(`版本 ${newVersionName} 已保存`);
+    }
+
+    // 渲染模板列表
+    function renderTemplateList(searchTerm = "") {
+        const container = document.getElementById("templateList");
+        let filtered = templates;
+        if (searchTerm) {
+            filtered = templates.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.description.toLowerCase().includes(searchTerm));
+        }
+        container.innerHTML = filtered.map(tmpl => `
+            <div class="template-card ${tmpl.id === currentTemplateId ? 'active' : ''}" data-id="${tmpl.id}">
+                <div class="template-name">
+                    <span>${tmpl.name}</span>
+                    <span class="template-badge">${tmpl.model === 'social_v2' ? '社媒' : tmpl.model}</span>
+                </div>
+                <div class="template-desc">${tmpl.description.substring(0, 60)}</div>
+            </div>
+        `).join('');
+        // 绑定点击事件
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const id = card.getAttribute('data-id');
+                if (id) {
+                    currentTemplateId = id;
+                    const template = getTemplateById(id);
+                    loadTemplateToEditor(template);
+                    renderTemplateList(document.getElementById("searchTemplate").value);
+                }
+            });
+        });
+    }
+
+    // 新建模板
+    function createNewTemplate() {
+        const newId = "t" + (templates.length+1);
+        const newTemplate = {
+            id: newId,
+            name: "新模板",
+            description: "在此编辑模板描述",
+            model: "social_v2",
+            prompt: "请输入您的 Prompt，支持 {{变量}}",
+            variables: [{ name: "example", default: "示例值", type: "text" }],
+            versions: [{ version: "v1.0", date: new Date().toISOString().slice(0,10), content: "初始版本", promptContent: "请输入您的 Prompt，支持 {{变量}}", variables: [{ name: "example", default: "示例值" }] }]
+        };
+        templates.push(newTemplate);
+        currentTemplateId = newId;
+        renderTemplateList();
+        loadTemplateToEditor(newTemplate);
+    }
+
+    // 测试运行模拟
+    function runTest() {
+        const template = getTemplateById(currentTemplateId);
+        let prompt = document.getElementById("promptContent").value;
+        // 获取变量值
+        const varInputs = document.querySelectorAll('.test-var-input');
+        const variablesMap = {};
+        varInputs.forEach(input => {
+            const varName = input.getAttribute('data-var');
+            variablesMap[varName] = input.value;
+        });
+        // 替换 prompt 中的变量
+        let finalPrompt = prompt;
+        Object.keys(variablesMap).forEach(key => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            finalPrompt = finalPrompt.replace(regex, variablesMap[key]);
+        });
+        // 模拟AI调用 (随机延时)
+        const outputDiv = document.getElementById("testOutput");
+        outputDiv.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 正在调用模型，请稍候...';
+        setTimeout(() => {
+            const mockResult = `【模拟输出】基于Prompt: \n"${finalPrompt.substring(0,100)}..."\n\n模型返回结果：\n情感分布：正面 48%，中性 32%，负面 20%\n高频负面关键词：物流慢(42次)，客服差(28次)，价格贵(19次)\n趋势总结：负面情绪上升3.2%，建议优化物流时效。`;
+            outputDiv.innerHTML = `<i class="fas fa-check-circle"></i> 测试完成\n<pre style="background:#f1f5f9; padding:12px; border-radius:16px; margin-top:8px; white-space:pre-wrap;">${mockResult}</pre>`;
+        }, 800);
+    }
+
+    // 重置当前编辑到原始模板
+    function resetToOriginal() {
+        const template = getTemplateById(currentTemplateId);
+        loadTemplateToEditor(template);
+    }
+
+    // 保存模板按钮 (保存新版本)
+    function handleSaveVersion() {
+        saveNewVersion();
+    }
+
+    // 切换选项卡
+    function switchTab(tabId) {
+        document.querySelectorAll('.editor-tab').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        if (tabId === 'edit') {
+            document.querySelector('[data-tab="edit"]').classList.add('active');
+            document.getElementById('editTab').classList.add('active');
+        } else if (tabId === 'versions') {
+            document.querySelector('[data-tab="versions"]').classList.add('active');
+            document.getElementById('versionsTab').classList.add('active');
+            // 刷新版本列表
+            const tmpl = getTemplateById(currentTemplateId);
+            renderVersionList(tmpl);
+        } else if (tabId === 'test') {
+            document.querySelector('[data-tab="test"]').classList.add('active');
+            document.getElementById('testTab').classList.add('active');
+            // 确保测试变量面板最新
+            renderTestVariables(currentEditingVersion.variables);
+        }
+    }
+
+    // 初始化事件
+    function init() {
+        renderTemplateList();
+        loadTemplateToEditor(getTemplateById(currentTemplateId));
+        // 监听搜索
+        document.getElementById("searchTemplate").addEventListener("input", (e) => {
+            renderTemplateList(e.target.value);
+        });
+        document.getElementById("newTemplateBtn").addEventListener("click", createNewTemplate);
+        document.getElementById("saveTemplateBtn").addEventListener("click", handleSaveVersion);
+        document.getElementById("saveVersionBtn").addEventListener("click", handleSaveVersion);
+        document.getElementById("resetTemplateBtn").addEventListener("click", resetToOriginal);
+        document.getElementById("addVariableBtn").addEventListener("click", () => {
+            currentEditingVersion.variables.push({ name: "new_var", default: "", type: "text" });
+            renderVariables(currentEditingVersion.variables);
+            renderTestVariables(currentEditingVersion.variables);
+        });
+        document.getElementById("runTestBtn").addEventListener("click", runTest);
+        // tab切换
+        document.querySelectorAll('.editor-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-tab');
+                switchTab(tab);
+            });
+        });
+        // 实时同步编辑区变动到 currentEditingVersion
+        document.getElementById("templateName").addEventListener("change", (e) => { currentEditingVersion.name = e.target.value; });
+        document.getElementById("templateDesc").addEventListener("change", (e) => { currentEditingVersion.description = e.target.value; });
+        document.getElementById("templateModel").addEventListener("change", (e) => { currentEditingVersion.model = e.target.value; });
+        document.getElementById("promptContent").addEventListener("input", (e) => { currentEditingVersion.prompt = e.target.value; });
+    }
+
+    init();
+</script>
+</body>
+</html>
